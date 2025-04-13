@@ -34,28 +34,21 @@ def test_headers_page(client):
     assert b'Test Value' in response.data
 
 # Тесты для cookie
-def test_cookie_set_and_delete(client):
-    """Проверка установки и удаления cookie"""
-    # Проверка начального состояния
+def test_cookie_headers(client):
+    # Первый запрос - проверяем отсутствие куки
     response = client.get('/request-data/cookies')
-    assert b'visit_count' not in response.data
+    assert 'Set-Cookie' not in response.headers
     
-    # Установка cookie
+    # Устанавливаем куку
     response = client.post('/request-data/cookies')
-    assert response.status_code == 302  # Редирект
+    assert 'Set-Cookie' in response.headers
+    assert 'visit_count' in response.headers['Set-Cookie']
     
-    # Проверка установленного cookie
-    response = client.get('/request-data/cookies')
-    assert b'visit_count' in response.data
-    
-    # Удаление cookie
+    # Удаляем куку
     response = client.post('/request-data/cookies')
-    assert response.status_code == 302
+    assert 'Set-Cookie' in response.headers
+    assert 'visit_count=;' in response.headers['Set-Cookie']
     
-    # Проверка удаленного cookie
-    response = client.get('/request-data/cookies')
-    assert b'visit_count' not in response.data
-
 # Тесты для формы
 def test_form_data_display(client):
     """Проверка отображения данных формы"""

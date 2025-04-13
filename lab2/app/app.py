@@ -26,14 +26,21 @@ def headers():
 
 @app.route('/request-data/cookies', methods=['GET', 'POST'])
 def cookies():
-    """Отображение и управление cookie"""
+    """Упрощённое управление cookie без редиректа"""
     if request.method == 'POST':
-        response = make_response(redirect(url_for('cookies')))
+
+        response = make_response(render_template(
+            'request-data/cookies.html',
+            cookies=request.cookies
+        ))
+        
         if 'visit_count' in request.cookies:
-            response.delete_cookie('visit_count')
+            response.set_cookie('visit_count', expires=0)
         else:
             response.set_cookie('visit_count', '1')
+            
         return response
+    
     return render_template('request-data/cookies.html', cookies=request.cookies)
 
 @app.route('/request-data/form', methods=['GET', 'POST'])
@@ -44,27 +51,20 @@ def form_data():
 
 @app.route('/phone', methods=['GET', 'POST'])
 def phone():
-    """Обработка формы телефона"""
     error = None
     formatted_phone = None
+    ALLOWED_CHARS = set('0123456789()-.+ ')
     
     if request.method == 'POST':
         phone_number = request.form.get('phone', '').strip()
         
-        # Удаляем все допустимые дополнительные символы для подсчета цифр
-        digits = re.sub(r'[\s\(\)\-\.\+]', '', phone_number)
+        digits = ''.join(c for c in phone_number if c.isdigit())
         
-        # Проверяем на недопустимые символы
-        if not re.match(r'^[\d\s\(\)\-\.\+]+$', phone_number):
-            error = "Недопустимый ввод. В номере телефона встречаются недопустимые символы."
-        
-        # Проверяем количество цифр
-        elif (len(digits) != 11 and (phone_number.startswith('+7') or phone_number.startswith('8'))) or \
+        if (len(digits) != 11 and (phone_number.startswith('+7') or phone_number.startswith('8'))) or \
              (len(digits) != 10 and not (phone_number.startswith('+7') or phone_number.startswith('8'))):
             error = "Недопустимый ввод. Неверное количество цифр."
         
         else:
-            # Форматируем номер
             if len(digits) == 11:
                 formatted_phone = f"8-{digits[1:4]}-{digits[4:7]}-{digits[7:9]}-{digits[9:]}"
             else:
