@@ -25,6 +25,22 @@ def validate_username(form, field):
     if len(username) < 5:
         raise ValidationError('Логин должен содержать не менее 5 символов')
 
+def validate_name(form, field):
+    name = field.data
+    if not name:
+        raise ValidationError('Поле не может быть пустым')
+    if len(name) > 50:
+        raise ValidationError('Поле не может быть длиннее 50 символов')
+    if not re.match(r'^[а-яА-ЯёЁ\s-]+$', name):
+        raise ValidationError('Поле должно содержать только русские буквы, пробелы и дефисы')
+
+def validate_middle_name(form, field):
+    if field.data:  # Проверяем только если поле заполнено
+        if len(field.data) > 50:
+            raise ValidationError('Поле не может быть длиннее 50 символов')
+        if not re.match(r'^[а-яА-ЯёЁ\s-]*$', field.data):
+            raise ValidationError('Поле должно содержать только русские буквы, пробелы и дефисы')
+
 class UserForm(FlaskForm):
     username = StringField('Логин', validators=[
         DataRequired(message='Поле не может быть пустым'),
@@ -48,13 +64,13 @@ class UserForm(FlaskForm):
 class UserEditForm(FlaskForm):
     first_name = StringField('Имя', validators=[
         DataRequired(message='Поле не может быть пустым'),
-        Length(max=50)
+        validate_name
     ])
     last_name = StringField('Фамилия', validators=[
         DataRequired(message='Поле не может быть пустым'),
-        Length(max=50)
+        validate_name
     ])
-    middle_name = StringField('Отчество', validators=[Length(max=50)])
+    middle_name = StringField('Отчество', validators=[validate_middle_name])
     role_id = SelectField('Роль', coerce=int)
 
 class ChangePasswordForm(FlaskForm):

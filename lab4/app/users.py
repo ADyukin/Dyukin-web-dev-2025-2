@@ -4,6 +4,7 @@ from werkzeug.security import generate_password_hash
 from app.repositories.user_repository import UserRepository
 from app.forms import UserForm, UserEditForm, ChangePasswordForm
 from app import db
+import hashlib
 
 bp = Blueprint('users', __name__)
 user_repository = UserRepository(db)
@@ -30,9 +31,12 @@ def create():
     
     if form.validate_on_submit():
         try:
+            # Хеширование пароля
+            password_hash = hashlib.sha256(form.password.data.encode()).hexdigest()
+            
             user_repository.create(
                 username=form.username.data,
-                password_hash=generate_password_hash(form.password.data),
+                password_hash=password_hash,
                 first_name=form.first_name.data,
                 last_name=form.last_name.data,
                 middle_name=form.middle_name.data or None,
@@ -63,6 +67,14 @@ def edit(user_id):
     
     if form.validate_on_submit():
         try:
+            # Проверка на изменение данных
+            if (form.first_name.data == user.first_name and 
+                form.last_name.data == user.last_name and 
+                form.middle_name.data == user.middle_name and 
+                form.role_id.data == user.role_id):
+                flash('Данные не были изменены', 'info')
+                return redirect(url_for('users.index'))
+            
             user_repository.update(
                 user_id=user_id,
                 first_name=form.first_name.data,
@@ -73,7 +85,7 @@ def edit(user_id):
             flash('Пользователь успешно обновлен', 'success')
             return redirect(url_for('users.index'))
         except Exception as e:
-            flash('Ошибка при обновлении пользователя', 'danger')
+            flash(f'Ошибка при обновлении пользователя: {str(e)}', 'danger')
     return render_template('users/form.html', form=form, title='Редактирование пользователя')
 
 @bp.route('/<int:user_id>/delete', methods=['POST'])
@@ -94,16 +106,26 @@ def change_password():
     form = ChangePasswordForm()
     if form.validate_on_submit():
         try:
+            # Проверка старого пароля
             if not current_user.check_password(form.old_password.data):
                 flash('Неверный старый пароль', 'danger')
                 return render_template('users/change_password.html', form=form)
             
+            # Проверка, что новый пароль не совпадает со старым
+            if form.old_password.data == form.new_password.data:
+                flash('Новый пароль должен отличаться от старого', 'danger')
+                return render_template('users/change_password.html', form=form)
+            
+            # Хеширование нового пароля
+            password_hash = hashlib.sha256(form.new_password.data.encode()).hexdigest()
+            
+            # Обновление пароля
             user_repository.update_password(
                 user_id=current_user.id,
-                password_hash=generate_password_hash(form.new_password.data)
+                password_hash=password_hash
             )
             flash('Пароль успешно изменен', 'success')
             return redirect(url_for('users.index'))
         except Exception as e:
-            flash('Ошибка при изменении пароля', 'danger')
+            flash(f'Ошибка при изменении пароля: {str(e)}', 'danger')
     return render_template('users/change_password.html', form=form)

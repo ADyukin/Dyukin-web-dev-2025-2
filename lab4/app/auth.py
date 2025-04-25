@@ -20,6 +20,11 @@ class User(UserMixin):
         self.username = username
         self.role_name = role_name
 
+    def check_password(self, password):
+        password_hash = hashlib.sha256(password.encode()).hexdigest()
+        user = user_repository.get_by_id(self.id)
+        return user and user.password_hash == password_hash
+
 @login_manager.user_loader
 def load_user(user_id):
     user = user_repository.get_by_id(user_id)
