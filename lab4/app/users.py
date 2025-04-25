@@ -3,18 +3,20 @@ from flask_login import login_required, current_user
 from werkzeug.security import generate_password_hash
 from app.repositories.user_repository import UserRepository
 from app.forms import UserForm, UserEditForm, ChangePasswordForm
+from app import db
 
 bp = Blueprint('users', __name__)
+user_repository = UserRepository(db)
 
 @bp.route('/')
 @login_required
 def index():
-    users = UserRepository.get_all()
+    users = user_repository.all()
     return render_template('users/index.html', users=users)
 
 @bp.route('/<int:user_id>')
 def view(user_id):
-    user = UserRepository.get_by_id(user_id)
+    user = user_repository.get_by_id(user_id)
     if not user:
         flash('Пользователь не найден', 'danger')
         return redirect(url_for('users.index'))
@@ -24,11 +26,11 @@ def view(user_id):
 @login_required
 def create():
     form = UserForm()
-    form.role_id.choices = [(r['id'], r['name']) for r in UserRepository.get_all_roles()]
+    form.role_id.choices = user_repository.get_all_roles()
     
     if form.validate_on_submit():
         try:
-            UserRepository.create(
+            user_repository.create(
                 username=form.username.data,
                 password_hash=generate_password_hash(form.password.data),
                 first_name=form.first_name.data,
@@ -45,23 +47,23 @@ def create():
 @bp.route('/<int:user_id>/edit', methods=['GET', 'POST'])
 @login_required
 def edit(user_id):
-    user = UserRepository.get_by_id(user_id)
+    user = user_repository.get_by_id(user_id)
     if not user:
         flash('Пользователь не найден', 'danger')
         return redirect(url_for('users.index'))
     
     form = UserEditForm()
-    form.role_id.choices = [(r['id'], r['name']) for r in UserRepository.get_all_roles()]
+    form.role_id.choices = user_repository.get_all_roles()
     
     if request.method == 'GET':
-        form.first_name.data = user['first_name']
-        form.last_name.data = user['last_name']
-        form.middle_name.data = user['middle_name']
-        form.role_id.data = user['role_id']
+        form.first_name.data = user.first_name
+        form.last_name.data = user.last_name
+        form.middle_name.data = user.middle_name
+        form.role_id.data = user.role_id
     
     if form.validate_on_submit():
         try:
-            UserRepository.update(
+            user_repository.update(
                 user_id=user_id,
                 first_name=form.first_name.data,
                 last_name=form.last_name.data,
@@ -78,7 +80,7 @@ def edit(user_id):
 @login_required
 def delete(user_id):
     try:
-        if UserRepository.delete(user_id):
+        if user_repository.delete(user_id):
             flash('Пользователь успешно удален', 'success')
         else:
             flash('Пользователь не найден', 'danger')
@@ -96,7 +98,7 @@ def change_password():
                 flash('Неверный старый пароль', 'danger')
                 return render_template('users/change_password.html', form=form)
             
-            UserRepository.update_password(
+            user_repository.update_password(
                 user_id=current_user.id,
                 password_hash=generate_password_hash(form.new_password.data)
             )

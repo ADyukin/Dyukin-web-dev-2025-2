@@ -1,13 +1,10 @@
 import os
 from flask import Flask, redirect, url_for
 from flask_login import LoginManager
-from .db import DBConnector
+from .db import db
 from .auth import login_manager, bp as auth_bp
 from .users import bp as users_bp
 from .repositories import user_repository
-from . import cli
-
-db = DBConnector()
 
 def create_app(test_config=None):
     app = Flask(__name__, instance_relative_config=False)

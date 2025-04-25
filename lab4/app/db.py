@@ -23,7 +23,10 @@ class DBConnector:
             g.db = mysql.connector.connect(**self.get_config())
         return g.db
     
-    def disconnect(self):
+    def disconnect(self, exc=None):
         db = g.pop('db', None)
         if db is not None:
             db.close()
+
+# Создаем глобальный экземпляр
+db = DBConnector()
