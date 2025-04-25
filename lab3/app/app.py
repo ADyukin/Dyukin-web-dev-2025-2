@@ -7,9 +7,6 @@ application = app
 
 app.config.from_pyfile('config.py')
 
-# Создаем сущность loginmanager, экземпляр класса
-# Привязываем его к текущему приложению
-# Сохраняет объект в приложении и позволяет при обработке запроса запускать методы
 login_manager = LoginManager()
 login_manager.init_app(app)
 
@@ -25,9 +22,6 @@ def get_users():
             'password': 'qwerty'
         }
     ]
-
-# Создаем класс, наследуя от UserMixin
-# Flasklogin ожидает интерфейс, наличие свойств is_authenticated, is_active, is_anonymous, get_id
 
 class User(UserMixin):
     def __init__(self, user_id, login):
