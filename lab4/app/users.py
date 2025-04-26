@@ -1,9 +1,9 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
 from flask_login import login_required, current_user
 from werkzeug.security import generate_password_hash
-from app.repositories.user_repository import UserRepository
-from app.forms import UserForm, UserEditForm, ChangePasswordForm
-from app import db
+from .repositories.user_repository import UserRepository
+from .forms import UserForm, UserEditForm, ChangePasswordForm
+from . import db
 import hashlib
 
 bp = Blueprint('users', __name__)
