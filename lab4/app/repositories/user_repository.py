@@ -44,7 +44,7 @@ class UserRepository:
             """)
             users = cursor.fetchall()
         return users
-
+    
     def create(self, username, password_hash, first_name, last_name, middle_name=None, role_id=None):
         connection = self.db_connector.connect()
         with connection.cursor() as cursor:

@@ -37,7 +37,7 @@ def login():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
-        remember_me = request.form.get('remember_me', None) == 'on'
+        remember_me = request.form.get('remember_me') == 'on'
 
         # Хешируем пароль
         password_hash = hashlib.sha256(password.encode()).hexdigest()

@@ -67,25 +67,23 @@ def edit(user_id):
     
     if form.validate_on_submit():
         try:
-            # Проверка на изменение данных
-            if (form.first_name.data == user.first_name and 
-                form.last_name.data == user.last_name and 
-                form.middle_name.data == user.middle_name and 
-                form.role_id.data == user.role_id):
-                flash('Данные не были изменены', 'info')
-                return redirect(url_for('users.index'))
-            
             user_repository.update(
                 user_id=user_id,
-                first_name=form.first_name.data,
-                last_name=form.last_name.data,
-                middle_name=form.middle_name.data or None,
+                first_name=form.first_name.data.strip(),
+                last_name=form.last_name.data.strip(),
+                middle_name=form.middle_name.data.strip() if form.middle_name.data else None,
                 role_id=form.role_id.data or None
             )
             flash('Пользователь успешно обновлен', 'success')
             return redirect(url_for('users.index'))
         except Exception as e:
             flash(f'Ошибка при обновлении пользователя: {str(e)}', 'danger')
+    elif request.method == 'POST':
+        # Если форма не прошла валидацию, показываем ошибки
+        for field, errors in form.errors.items():
+            for error in errors:
+                flash(f'{form[field].label.text}: {error}', 'danger')
+    
     return render_template('users/form.html', form=form, title='Редактирование пользователя')
 
 @bp.route('/<int:user_id>/delete', methods=['POST'])

@@ -1,45 +1,62 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SelectField
-from wtforms.validators import DataRequired, Length, EqualTo, Regexp, ValidationError
-import re
+from wtforms.validators import DataRequired, Length, EqualTo, ValidationError
 
 def validate_password(form, field):
     password = field.data
+    
+    # Проверка длины
     if len(password) < 8:
         raise ValidationError('Пароль должен содержать не менее 8 символов')
     if len(password) > 128:
         raise ValidationError('Пароль должен содержать не более 128 символов')
-    if not re.search(r'[A-Z]', password) or not re.search(r'[a-z]', password):
+    
+    # Проверка наличия заглавных и строчных букв
+    has_upper = False
+    has_lower = False
+    has_digit = False
+    
+    for char in password:
+        if char.isupper():
+            has_upper = True
+        elif char.islower():
+            has_lower = True
+        elif char.isdigit():
+            has_digit = True
+        elif char not in '~!?@#$%^&*_-+()[]{}><\\/|"\',.:;':
+            raise ValidationError('Пароль содержит недопустимые символы')
+    
+    if not has_upper or not has_lower:
         raise ValidationError('Пароль должен содержать как минимум одну заглавную и одну строчную букву')
-    if not re.search(r'[0-9]', password):
+    if not has_digit:
         raise ValidationError('Пароль должен содержать как минимум одну цифру')
-    if re.search(r'[^a-zA-Zа-яА-Я0-9~!?@#$%^&*_\-+()\[\]{}><\/\\|"\',.:;]', password):
-        raise ValidationError('Пароль содержит недопустимые символы')
     if ' ' in password:
         raise ValidationError('Пароль не должен содержать пробелы')
 
 def validate_username(form, field):
     username = field.data
-    if not re.match(r'^[a-zA-Z0-9]+$', username):
-        raise ValidationError('Логин должен состоять только из латинских букв и цифр')
+    
     if len(username) < 5:
         raise ValidationError('Логин должен содержать не менее 5 символов')
+    
+    for char in username:
+        if not (char.isalpha() or char.isdigit()):
+            raise ValidationError('Логин должен состоять только из латинских букв и цифр')
 
 def validate_name(form, field):
     name = field.data
+    
     if not name:
         raise ValidationError('Поле не может быть пустым')
+    
+    if len(name) < 2:
+        raise ValidationError('Имя должно содержать не менее 2 символов')
     if len(name) > 50:
-        raise ValidationError('Поле не может быть длиннее 50 символов')
-    if not re.match(r'^[а-яА-ЯёЁ\s-]+$', name):
-        raise ValidationError('Поле должно содержать только русские буквы, пробелы и дефисы')
-
-def validate_middle_name(form, field):
-    if field.data:  # Проверяем только если поле заполнено
-        if len(field.data) > 50:
-            raise ValidationError('Поле не может быть длиннее 50 символов')
-        if not re.match(r'^[а-яА-ЯёЁ\s-]*$', field.data):
-            raise ValidationError('Поле должно содержать только русские буквы, пробелы и дефисы')
+        raise ValidationError('Имя должно содержать не более 50 символов')
+    
+    for char in name:
+        if not (char.isalpha() or char in ' -'):
+            raise ValidationError('Имя должно содержать только русские буквы, пробелы и дефисы')
 
 class UserForm(FlaskForm):
     username = StringField('Логин', validators=[
@@ -70,7 +87,9 @@ class UserEditForm(FlaskForm):
         DataRequired(message='Поле не может быть пустым'),
         validate_name
     ])
-    middle_name = StringField('Отчество', validators=[validate_middle_name])
+    middle_name = StringField('Отчество', validators=[
+        validate_name
+    ])
     role_id = SelectField('Роль', coerce=int)
 
 class ChangePasswordForm(FlaskForm):
